@@ -1,0 +1,127 @@
+#!/bin/bash
+
+YA_API_KEY=""
+FROM_LANG='auto'
+TO_LANG='ru'
+
+if [ -z "${YA_API_KEY}" ] ; then
+  echo 'Yandex API Key not set! Please set it! (variable "YA_API_KEY")' 1>&2
+  echo 'Get APY Key: https://tech.yandex.ru/keys/get/?service=trnsl' 1>&2
+fi
+
+SOURCE_TEXT=''
+TRANSLATED_TEXT=''
+INPUT_TYPE=''
+OUTPUT_TYPE=''
+THIS_SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"                          # Откуда запущен скрипт
+
+# Проверка наличия в системе используемых утилит
+___check_utils() {
+  which $1 &>/dev/null
+  if [ $? -ne 0 ] ; then 
+    echo "I have not found '$1'! Please first install it." 
+    exit 100 
+  fi
+}
+___check_utils sed
+___check_utils wget
+___check_utils cat
+
+___help() {
+  cat << EOF_HELP
+Usage:  yt [-o|-O|-z|-n] [-f from_lang] [-t to_lang] -i|-I|--|text
+
+        -o            - output to primary selection
+        -O            - output to clipboard
+        -z            - usage zenity for output
+        -n            - usage notify-send for output
+        -f from_lang  - source language (default: auto)
+        -t to_lang    - destination language (default: ru)
+        -i            - input from primary selection
+        -I            - input from clipboard
+        --            - read standard input
+        text          - text for translate (only last arg)
+        -h            - this help
+EOF_HELP
+}
+
+# проверка аргументов запуска
+___check_args() {
+  case "$1" in
+    "i" ) 
+      if [ -n "${INPUT_TYPE}" ] ; then
+        echo 'Can not be used at the same time has arguments "-i", "-I", "--" and "text". Exiting...' 1>&2
+        exit 98
+      fi
+    ;;
+    "o" )
+      if [ -n "${OUTPUT_TYPE}" ] ; then
+        echo 'Can not be used at the same time has arguments "-o", "-O", "-z" and "-n". Exiting...' 1>&2
+        exit 99
+      fi
+    ;;
+  esac
+}
+
+# Парсим параметры запуска
+if [ $# -le 0 ] ; then ___help ; exit ; fi
+while [ $# -gt 0 ]; do
+  case "$1" in
+    "--"                        ) ___check_args i ; INPUT_TYPE='stdin'              ; shift ;;
+    "-i" | "--input-primary"    ) ___check_args i ; INPUT_TYPE='input-primary'      ; shift ;;
+    "-I" | "--input-clipboard"  ) ___check_args i ; INPUT_TYPE='input-clipboard'    ; shift ;;
+    "-o" | "--output-primary"   ) ___check_args o ; OUTPUT_TYPE='output-primary'    ; shift ;;
+    "-O" | "--output-clipboard" ) ___check_args o ; OUTPUT_TYPE='output-clipboard'  ; shift ;;
+    "-z" | "--zenity"           ) ___check_args o ; OUTPUT_TYPE='zenity'            ; shift ;;
+    "-n" | "--notify-send"      ) ___check_args o ; OUTPUT_TYPE='notify-send'       ; shift ;;
+    "-f" | "--from"             ) FROM_LANG="$2"                                    ; shift 2   ;;
+    "-t" | "--to"               ) TO_LANG="$2"                                      ; shift 2   ;;
+    "-h" | "--help"             ) ___help                                           ; exit  ;;
+    -*                          ) echo "Invalid argument '$1'. Exiting..."          ; exit 105 ;;
+    *                           ) ___check_args i ; INPUT_TYPE='text'               ; SOURCE_TEXT="$1" ; shift ;;
+  esac
+done
+
+### Проверка наличия в системе используемых утилит {
+case "${INPUT_TYPE}" in
+  "input-primary" | "input-clipboard" ) ___check_utils xsel ;;
+esac
+case "${OUTPUT_TYPE}" in
+  "output-primary" | "output-clipboard"  ) ___check_utils xsel ;;
+  "zenity"            ) ___check_utils zenity ;;
+  "notify-send"       ) ___check_utils notify-send ;;
+esac
+### }
+
+# получаем текст для перевода, в зависимости от аргуметов запуска
+case "${INPUT_TYPE}" in
+  "stdin"           ) SOURCE_TEXT="$(cat)" ;;
+  "input-primary"   ) SOURCE_TEXT="$(xsel -o)" ;;
+  "input-clipboard" ) SOURCE_TEXT="$(xsel -b)" ;;
+  "text"            ) noop=noop ;;
+  *                 ) echo 'You must specify one of the arguments: "-i", "-I", "--" or "text". Exiting...' 1>&2 ; exit 101 ;;
+esac
+
+# удаляем возможный мусор со входа
+SOURCE_TEXT="$(echo "${SOURCE_TEXT}" | sed "s/[\"\'<>]//g")"
+
+# настройка направления перевода
+if [ "${FROM_LANG}" = "auto" ] ; then
+  LANG="${TO_LANG}"
+else
+  LANG="${FROM_LANG}-${TO_LANG}"
+fi
+
+# собственно сам перевод и подчистка результата от возможного мусора
+TRANSLATED_TEXT="$(wget -qO- "https://translate.yandex.net/api/v1.5/tr.json/translate?key=${YA_API_KEY}&text=${SOURCE_TEXT}&lang=${LANG}" | sed 's/.*\[\"\(.*\)\"\].*/\1/')"
+
+# вывод результат перевода, в зависимости от аргуметов запуска
+case "${OUTPUT_TYPE}" in
+  "output-primary"    ) echo "${TRANSLATED_TEXT}" | xsel -i ;;
+  "output-clipboard"  ) echo "${TRANSLATED_TEXT}" | xsel -b ;;
+  "zenity"            ) echo "${TRANSLATED_TEXT}" | zenity --title="Yandex Translate" --text-info 2>/dev/null ;;
+  "notify-send"       ) notify-send -u critical "Yandex Translate" "$(echo "${TRANSLATED_TEXT}")" ;;
+  ""                  ) echo "${TRANSLATED_TEXT}" ;;
+  *                   ) echo 'Fatal error [output-102]. Sorry...' 1>&2 ; exit 102 ;;
+esac
+
