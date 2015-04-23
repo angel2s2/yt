@@ -1,0 +1,2 @@
+# yt
+Yandex Translation Script
