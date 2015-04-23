@@ -1,9 +1,6 @@
 # yt
 Yandex Translation Script
 
-Идею почерпнул из статьи http://habrahabr.ru/post/256063/ .
-
-
 ```
 Usage:  yt [-o|-O|-z|-n] [-f from_lang] [-t to_lang] -i|-I|--|text
 
@@ -27,3 +24,8 @@ Usage:  yt [-o|-O|-z|-n] [-f from_lang] [-t to_lang] -i|-I|--|text
 * `zenity` - при использования ключа запуска `-z`
 * `notify-send` - при использования ключа запуска `-n`
 * `xsel` - при использовании ключей запуска `-o`, `-O`, `-i`, `-I`
+
+
+<br /><br /><br />
+Идея почерпнута из статьи http://habrahabr.ru/post/256063/ .
+
