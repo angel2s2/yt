@@ -19,3 +19,11 @@ Usage:  yt [-o|-O|-z|-n] [-f from_lang] [-t to_lang] -i|-I|--|text
         text          - text for translate (only last arg)
         -h            - this help
 ```
+
+##### Зависимости
+* `bash` - на нем написан сам скрипт :-D
+* `sed`, `wget` - нужны всегда
+* `cat` - вывод хелпа и ввод с `stdin`
+* `zenity` - при использования ключа запуска `-z`
+* `notify-send` - при использования ключа запуска `-n`
+* `xsel` - при использовании ключей запуска `-o`, `-O`, `-i`, `-I`
