@@ -1,8 +1,9 @@
 #!/bin/bash
 
-YA_API_KEY=""
+YA_API_KEY="trnsl.1.1.20150420T102906Z.5281626825c81d8b.ff2a6fddc955ef6799de64a5567efb4207fe38ec"
 FROM_LANG='auto'
 TO_LANG='ru'
+PROXY=''
 
 if [ -z "${YA_API_KEY}" ] ; then
   echo 'Yandex API Key not set! Please set it! (variable "YA_API_KEY")' 1>&2
@@ -24,7 +25,7 @@ ___check_utils() {
   fi
 }
 ___check_utils sed
-___check_utils wget
+___check_utils curl
 ___check_utils cat
 
 ___help() {
@@ -74,8 +75,9 @@ while [ $# -gt 0 ]; do
     "-O" | "--output-clipboard" ) ___check_args o ; OUTPUT_TYPE='output-clipboard'  ; shift ;;
     "-z" | "--zenity"           ) ___check_args o ; OUTPUT_TYPE='zenity'            ; shift ;;
     "-n" | "--notify-send"      ) ___check_args o ; OUTPUT_TYPE='notify-send'       ; shift ;;
-    "-f" | "--from"             ) FROM_LANG="$2"                                    ; shift 2   ;;
-    "-t" | "--to"               ) TO_LANG="$2"                                      ; shift 2   ;;
+    "-f" | "--from"             ) FROM_LANG="$2"                                    ; shift 2 ;;
+    "-t" | "--to"               ) TO_LANG="$2"                                      ; shift 2 ;;
+    "-p" | "--proxy"            ) PROXY="$2"                                        ; shift 2 ;;
     "-h" | "--help"             ) ___help                                           ; exit  ;;
     -*                          ) echo "Invalid argument '$1'. Exiting..."          ; exit 105 ;;
     *                           ) ___check_args i ; INPUT_TYPE='text'               ; SOURCE_TEXT="$1" ; shift ;;
@@ -112,8 +114,13 @@ else
   LANG="${FROM_LANG}-${TO_LANG}"
 fi
 
+# настраиваем прокси
+if [ -n "${PROXY}" ] ; then
+  PROXY="-x ${PROXY}"
+fi
+
 # собственно сам перевод и подчистка результата от возможного мусора
-TRANSLATED_TEXT="$(wget -qO- "https://translate.yandex.net/api/v1.5/tr.json/translate?key=${YA_API_KEY}&text=${SOURCE_TEXT}&lang=${LANG}" | sed 's/.*\[\"\(.*\)\"\].*/\1/')"
+TRANSLATED_TEXT="$(curl -s "${PROXY}" "https://translate.yandex.net/api/v1.5/tr.json/translate?key=${YA_API_KEY}&text=${SOURCE_TEXT}&lang=${LANG}" | sed 's/.*\[\"\(.*\)\"\].*/\1/')"
 
 # вывод результат перевода, в зависимости от аргуметов запуска
 case "${OUTPUT_TYPE}" in
@@ -124,4 +131,3 @@ case "${OUTPUT_TYPE}" in
   ""                  ) echo "${TRANSLATED_TEXT}" ;;
   *                   ) echo 'Fatal error [output-102]. Sorry...' 1>&2 ; exit 102 ;;
 esac
-
