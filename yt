@@ -27,6 +27,7 @@ ___check_utils() {
 ___check_utils sed
 ___check_utils curl
 ___check_utils cat
+___check_utils tr
 
 ___help() {
   cat << EOF_HELP
@@ -105,7 +106,7 @@ case "${INPUT_TYPE}" in
 esac
 
 # удаляем возможный мусор со входа
-SOURCE_TEXT="$(echo "${SOURCE_TEXT}" | sed "s/[\"\'<>]//g")"
+SOURCE_TEXT="$(echo "${SOURCE_TEXT}" | sed "s/[\"\'<>]//g" | tr '\n' '|')"
 
 # настройка направления перевода
 if [ "${FROM_LANG}" = "auto" ] ; then
@@ -120,7 +121,7 @@ if [ -n "${PROXY}" ] ; then
 fi
 
 # собственно сам перевод и подчистка результата от возможного мусора
-TRANSLATED_TEXT="$(curl -s "${PROXY}" "https://translate.yandex.net/api/v1.5/tr.json/translate?key=${YA_API_KEY}&text=${SOURCE_TEXT}&lang=${LANG}" | sed 's/.*\[\"\(.*\)\"\].*/\1/')"
+TRANSLATED_TEXT="$(curl -s "${PROXY}" "https://translate.yandex.net/api/v1.5/tr.json/translate?key=${YA_API_KEY}&text=${SOURCE_TEXT}&lang=${LANG}" | sed 's/.*\[\"\(.*\)\"\].*/\1/' | tr '|' '\n')"
 
 # вывод результат перевода, в зависимости от аргуметов запуска
 case "${OUTPUT_TYPE}" in
@@ -131,3 +132,4 @@ case "${OUTPUT_TYPE}" in
   ""                  ) echo "${TRANSLATED_TEXT}" ;;
   *                   ) echo 'Fatal error [output-102]. Sorry...' 1>&2 ; exit 102 ;;
 esac
+
