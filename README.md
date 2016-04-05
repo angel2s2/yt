@@ -2,7 +2,7 @@
 Yandex Translation Script
 
 ```
-Usage:  yt [-o|-O|-z|-n] [-f from_lang] [-t to_lang] -i|-I|--|text
+Usage:  yt [-o|-O|-z|-n] [-f from_lang] [-t to_lang] [-p http://proxy:port] -i|-I|--|text
 
         -o            - output to primary selection
         -O            - output to clipboard
@@ -10,6 +10,7 @@ Usage:  yt [-o|-O|-z|-n] [-f from_lang] [-t to_lang] -i|-I|--|text
         -n            - usage notify-send for output
         -f from_lang  - source language (default: auto)
         -t to_lang    - destination language (default: ru)
+        -p proxy      - use proxy
         -i            - input from primary selection
         -I            - input from clipboard
         --            - read standard input
@@ -19,7 +20,7 @@ Usage:  yt [-o|-O|-z|-n] [-f from_lang] [-t to_lang] -i|-I|--|text
 
 ##### Зависимости
 * `bash` - на нем написан сам скрипт :-D
-* `sed`, `wget` - нужны всегда
+* `sed`, `curl`, `tr` - нужны всегда
 * `cat` - вывод хелпа и ввод с `stdin`
 * `zenity` - при использования ключа запуска `-z`
 * `notify-send` - при использования ключа запуска `-n`
