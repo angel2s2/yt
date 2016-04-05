@@ -1,6 +1,6 @@
 #!/bin/bash
 
-YA_API_KEY="trnsl.1.1.20150420T102906Z.5281626825c81d8b.ff2a6fddc955ef6799de64a5567efb4207fe38ec"
+YA_API_KEY=""
 FROM_LANG='auto'
 TO_LANG='ru'
 PROXY=''
